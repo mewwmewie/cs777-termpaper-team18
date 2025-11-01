@@ -589,13 +589,13 @@ Complete documentation in `docs/METCS777-term-paper-code-sample-doc-Team18.pdf`:
 
 ## Team Contributions
 
-Anh Pham (U01836723):
+Jinzhe Bai (U41047897):
 - AWS EMR infrastructure setup
 - DataFrame API implementation
 - Model 1 development
 - Cost analysis
 
-Jinzhe Bai (U41047897):
+Anh Pham (U01836723):
 - GCP Dataproc infrastructure setup
 - RDD API implementation
 - Model 2 development
