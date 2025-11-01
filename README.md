@@ -61,73 +61,6 @@ cs777-termpaper-team18/
 
 ---
 
-## Quick Start
-
-### Prerequisites
-
-- Apache Spark 3.x with PySpark
-- Python 3.7+
-- Cloud account (AWS or GCP)
-- Libraries: matplotlib, pandas, numpy, psutil
-
-### Setup
-```bash
-# Clone repository
-git clone https://github.com/mewwmewie/cs777-termpaper-team18.git
-cd cs777-termpaper-team18
-
-# Extract sample data
-unzip sample-data.zip
-
-# Install Python dependencies (on cluster)
-pip install matplotlib pandas numpy psutil --break-system-packages
-```
-
-### Run on GCP Dataproc
-```bash
-# Upload data to Cloud Storage
-gsutil cp -r sample-data/* gs://your-bucket/input/
-
-# Submit Task 1 (DataFrame)
-gcloud dataproc jobs submit pyspark \
-  code/METCS777-term-paper-code-sample-1.1-Team18.py \
-  --cluster=your-cluster --region=us-east1 \
-  -- gs://your-bucket/input/ gs://your-bucket/output/
-
-# Submit Task 1 (RDD)
-gcloud dataproc jobs submit pyspark \
-  code/METCS777-term-paper-code-sample-1.2-Team18.py \
-  --cluster=your-cluster --region=us-east1 \
-  -- gs://your-bucket/input/ gs://your-bucket/output/
-
-# Submit Model 1
-gcloud dataproc jobs submit pyspark \
-  code/METCS777-term-paper-code-sample-2.1-Team18.py \
-  --cluster=your-cluster --region=us-east1 \
-  -- gs://your-bucket/input/ gs://your-bucket/output/
-
-# Submit Model 2
-gcloud dataproc jobs submit pyspark \
-  code/METCS777-term-paper-code-sample-2.2-Team18.py \
-  --cluster=your-cluster --region=us-east1 \
-  -- gs://your-bucket/input/ gs://your-bucket/output/
-```
-
-### Run on AWS EMR
-```bash
-# Upload data to S3
-aws s3 cp sample-data/ s3://your-bucket/input/ --recursive
-
-# Submit jobs (replace with appropriate paths)
-spark-submit --master yarn --deploy-mode cluster \
-  --num-executors 2 --executor-cores 4 \
-  --executor-memory 12G --driver-memory 4G \
-  s3://your-bucket/code/METCS777-term-paper-code-sample-1.1-Team18.py \
-  s3://your-bucket/input/ s3://your-bucket/output/
-```
-
----
-
 ## Dataset
 
 Source: Dota 2 Pro League Matches (2020-2024)
@@ -150,6 +83,211 @@ Full Dataset: https://www.kaggle.com/datasets/devinanzelmo/dota-2-matches
 
 ---
 
+## Quick Start
+
+### Prerequisites
+
+- Apache Spark 3.x with PySpark
+- Python 3.7+
+- AWS account or GCP account
+- Libraries: matplotlib, pandas, numpy, psutil
+
+### Setup
+```bash
+# Clone repository
+git clone https://github.com/mewwmewie/cs777-termpaper-team18.git
+cd cs777-termpaper-team18
+
+# Extract sample data
+unzip sample-data.zip
+
+# Install Python dependencies on cluster master node
+pip install matplotlib pandas numpy psutil --break-system-packages
+```
+
+### AWS EMR Setup
+```bash
+# Create S3 buckets
+aws s3 mb s3://cs777-termpaper-input
+aws s3 mb s3://cs777-termpaper-output
+
+# Upload data to S3
+aws s3 cp sample-data/ s3://cs777-termpaper-input/ --recursive
+
+# Upload code files
+aws s3 cp code/ s3://cs777-termpaper-code/ --recursive
+
+# Create EMR cluster
+aws emr create-cluster \
+  --name "DOTA2-Analytics-Cluster" \
+  --release-label emr-6.10.0 \
+  --applications Name=Spark \
+  --instance-type m5.xlarge \
+  --instance-count 3 \
+  --use-default-roles \
+  --log-uri s3://cs777-termpaper-logs/
+```
+
+### GCP Dataproc Setup
+```bash
+# Create Cloud Storage buckets
+gsutil mb gs://cs777-termpaper-input
+gsutil mb gs://cs777-termpaper-output
+
+# Upload data to Cloud Storage
+gsutil cp -r sample-data/* gs://cs777-termpaper-input/
+
+# Upload code files
+gsutil cp code/* gs://cs777-termpaper-code/
+
+# Create Dataproc cluster
+gcloud dataproc clusters create dota2-analytics-cluster \
+  --region us-east1 \
+  --master-machine-type n1-standard-4 \
+  --master-boot-disk-size 50 \
+  --num-workers 2 \
+  --worker-machine-type n1-standard-4 \
+  --worker-boot-disk-size 50 \
+  --image-version 2.0-debian10
+```
+
+---
+
+## Running the Code
+
+### Task 1.1: Analytics Queries (DataFrame)
+
+**On AWS EMR:**
+```bash
+spark-submit \
+  --master yarn \
+  --deploy-mode cluster \
+  --num-executors 2 \
+  --executor-cores 4 \
+  --executor-memory 12G \
+  --driver-memory 4G \
+  s3://cs777-termpaper-code/METCS777-term-paper-code-sample-1.1-Team18.py \
+  s3://cs777-termpaper-input/ \
+  s3://cs777-termpaper-output/task1-df/
+```
+
+**On GCP Dataproc:**
+```bash
+gcloud dataproc jobs submit pyspark \
+  gs://cs777-termpaper-code/METCS777-term-paper-code-sample-1.1-Team18.py \
+  --cluster=dota2-analytics-cluster \
+  --region=us-east1 \
+  -- gs://cs777-termpaper-input/ gs://cs777-termpaper-output/task1-df/
+```
+
+**Expected Outputs:**
+- `hero_trends.txt` - 612 rows of hero pick/ban statistics by year
+- `hero_by_duration.txt` - 372 rows of hero performance by game phase
+- `duration_trends.txt` - 49 rows of match duration statistics by month
+- `duration_correlation.txt` - 5 rows of win rates by duration bucket
+- `visualizations/02_hero_trends.png` - Hero trends chart
+- `visualizations/05_duration_winrate.png` - Duration vs win rate chart
+- `visualizations/12_performance_dashboard.png` - Performance metrics dashboard
+- `performance_metrics.json` - Execution time metrics
+
+### Task 1.2: Analytics Queries (RDD)
+
+**On AWS EMR:**
+```bash
+spark-submit \
+  --master yarn \
+  --deploy-mode cluster \
+  --num-executors 2 \
+  --executor-cores 4 \
+  --executor-memory 12G \
+  --driver-memory 4G \
+  s3://cs777-termpaper-code/METCS777-term-paper-code-sample-1.2-Team18.py \
+  s3://cs777-termpaper-input/ \
+  s3://cs777-termpaper-output/task1-rdd/
+```
+
+**On GCP Dataproc:**
+```bash
+gcloud dataproc jobs submit pyspark \
+  gs://cs777-termpaper-code/METCS777-term-paper-code-sample-1.2-Team18.py \
+  --cluster=dota2-analytics-cluster \
+  --region=us-east1 \
+  -- gs://cs777-termpaper-input/ gs://cs777-termpaper-output/task1-rdd/
+```
+
+**Expected Outputs:**
+Same structure as Task 1.1 but with RDD API performance metrics
+
+### Task 2.1: Match Outcome Prediction
+
+**On AWS EMR:**
+```bash
+spark-submit \
+  --master yarn \
+  --deploy-mode cluster \
+  --num-executors 2 \
+  --executor-cores 4 \
+  --executor-memory 12G \
+  --driver-memory 4G \
+  s3://cs777-termpaper-code/METCS777-term-paper-code-sample-2.1-Team18.py \
+  s3://cs777-termpaper-input/ \
+  s3://cs777-termpaper-output/model1/
+```
+
+**On GCP Dataproc:**
+```bash
+gcloud dataproc jobs submit pyspark \
+  gs://cs777-termpaper-code/METCS777-term-paper-code-sample-2.1-Team18.py \
+  --cluster=dota2-analytics-cluster \
+  --region=us-east1 \
+  -- gs://cs777-termpaper-input/ gs://cs777-termpaper-output/model1/
+```
+
+**Expected Outputs:**
+- `model1_results.json` - Complete metrics in JSON format
+- `model1_results_report/part-00000` - Human-readable report with:
+  - Classification metrics (AUC, Accuracy) for 3 algorithms
+  - Training times for DataFrame and RDD implementations
+  - Feature importance rankings
+  - Memory usage and inference speed
+  - Platform comparison (AWS vs GCP)
+
+### Task 2.2: Match Duration Prediction
+
+**On AWS EMR:**
+```bash
+spark-submit \
+  --master yarn \
+  --deploy-mode cluster \
+  --num-executors 2 \
+  --executor-cores 4 \
+  --executor-memory 12G \
+  --driver-memory 4G \
+  s3://cs777-termpaper-code/METCS777-term-paper-code-sample-2.2-Team18.py \
+  s3://cs777-termpaper-input/ \
+  s3://cs777-termpaper-output/model2/
+```
+
+**On GCP Dataproc:**
+```bash
+gcloud dataproc jobs submit pyspark \
+  gs://cs777-termpaper-code/METCS777-term-paper-code-sample-2.2-Team18.py \
+  --cluster=dota2-analytics-cluster \
+  --region=us-east1 \
+  -- gs://cs777-termpaper-input/ gs://cs777-termpaper-output/model2/
+```
+
+**Expected Outputs:**
+- `model2_results.json` - Complete metrics in JSON format
+- `model2_results_report/part-00000` - Human-readable report with:
+  - Regression metrics (RMSE, R²) for 3 algorithms
+  - Training times for DataFrame and RDD implementations
+  - Feature importance rankings
+  - Prediction accuracy analysis
+  - Platform comparison (AWS vs GCP)
+
+---
+
 ## Results Summary
 
 ### Task 1: Analytics Query Performance
@@ -167,44 +305,44 @@ Key Findings:
 - GCP: 15% faster than AWS
 - Throughput: GCP DF (310 MB/s) > AWS DF (280 MB/s) > GCP RDD (180 MB/s) > AWS RDD (160 MB/s)
 
-### Task 2 Model 1: Match Outcome Prediction (Classification)
+### Task 2 Model 1: Match Outcome Prediction
 
 Dataset: 119,801 matches | Features: 25 early-game metrics
 
 | Algorithm | API | Training (GCP) | Accuracy | AUC |
 |-----------|-----|----------------|----------|-----|
 | Logistic Regression | DataFrame | 17.6s | 64.9% | 0.707 |
-| Random Forest | DataFrame | 46.7s | 64.8% | 0.727 (BEST) |
+| Random Forest | DataFrame | 46.7s | 64.8% | 0.727 |
 | Gradient Boosting | DataFrame | 141.8s | 63.9% | 0.717 |
 | Random Forest | RDD | 13.4s | 65.4% | 0.655 |
 | Gradient Boosting | RDD | 48.7s | 65.3% | 0.655 |
 
-Best Model: Random Forest DataFrame (AUC: 0.727)
+Best Model: Random Forest DataFrame (AUC: 0.727, Training: 46.7s)
 
-Top Features:
-1. avg_gold_adv_5_10 (0.1842) - Gold advantage at 5-10 minutes
+Top 5 Features:
+1. avg_gold_adv_5_10 (0.1842)
 2. total_kills (0.1534)
 3. max_hero_damage (0.1286)
 4. avg_gpm_all (0.1127)
 5. kill_death_ratio (0.0945)
 
-### Task 2 Model 2: Match Duration Prediction (Regression)
+### Task 2 Model 2: Match Duration Prediction
 
 Dataset: 123,491 matches | Features: 26 match characteristics
 
 | Algorithm | API | Training (GCP) | RMSE | R² |
 |-----------|-----|----------------|------|-----|
 | Linear Regression | DataFrame | 2.5s | 265.9 | 0.798 |
-| Linear Regression | RDD | 23.0s | Failed (NaN) | Failed |
+| Linear Regression | RDD | 23.0s | Failed | Failed |
 | Random Forest | DataFrame | 59.3s | 226.1 | 0.854 |
 | Random Forest | RDD | 15.8s | 241.6 | 0.834 |
-| Gradient Boosting | DataFrame | 145.4s | 223.2 | 0.857 (BEST) |
+| Gradient Boosting | DataFrame | 145.4s | 223.2 | 0.857 |
 | Gradient Boosting | RDD | 55.1s | 236.3 | 0.842 |
 
 Best Model: Gradient Boosting DataFrame (RMSE: 223.2s, R²: 0.857)
 
-Top Features:
-1. total_score (0.2156) - Combined kills
+Top 5 Features:
+1. total_score (0.2156)
 2. total_objectives (0.1893)
 3. gold_swing_std (0.1467)
 4. avg_hero_damage (0.1234)
@@ -225,22 +363,21 @@ Top Features:
 
 ## Key Findings
 
-### 1. DataFrame vs RDD API
+### DataFrame vs RDD API
 
 DataFrame Advantages:
 - 6.2x faster for complex queries
 - 2-3% more accurate ML models
 - 100x faster inference (0.02ms vs 2ms)
-- More reliable (RDD Linear Regression failed)
-- Automatic optimization (Catalyst)
+- More reliable (RDD Linear Regression failed with NaN)
+- Automatic optimization via Catalyst
 
 RDD Advantages:
 - 40% faster feature engineering
 - 60% higher data throughput
-- More control for advanced users
-- Prone to failures (NaN errors)
+- More control for advanced optimization
 
-### 2. GCP Dataproc vs AWS EMR
+### GCP Dataproc vs AWS EMR
 
 GCP Advantages:
 - 15% faster execution
@@ -249,64 +386,61 @@ GCP Advantages:
 - 10% total project savings
 
 AWS Advantages:
-- Better ecosystem integration
+- Better ecosystem integration (Redshift, Lambda, Glue)
 - More instance options
 - Stronger enterprise support
 
-### 3. Machine Learning Insights
+### Machine Learning Insights
 
 Match Outcome Prediction:
-- 72.7% AUC using only first 10 minutes
-- Gold advantage is strongest predictor
-- Early game determines 72% of outcomes
+- 72.7% AUC using only first 10 minutes of data
+- Gold advantage at 5-10 minutes is strongest predictor
+- Early game determines 72% of match outcomes
 
 Match Duration Prediction:
-- R²=0.857 (explains 85.7% variance)
-- Average error: ±3.7 minutes
-- Total score most predictive feature
+- R²=0.857 (explains 85.7% of variance)
+- Average prediction error: ±3.7 minutes
+- Total score (combined kills) is most predictive feature
 
 ---
 
-## Visualizations
+## Environment Configuration
 
-Sample Outputs:
-
-Hero Trends Chart (02_hero_trends.png)
-Line charts showing pick/ban rates for top 5 trending heroes over time
-
-Duration vs Win Rate (05_duration_winrate.png)
-Bar chart of Radiant win rate by match duration + distribution pie chart
-
-Performance Dashboard (12_performance_dashboard.png)
-Execution time comparison, statistics, and category analysis
-
----
-
-## Environment Setup
-
-### Cloud Configuration
-
-AWS EMR:
-- Cluster: 1 master + 2 core nodes
-- Instance: m5.xlarge (4 vCPU, 16 GB RAM)
-- Storage: Amazon S3
-- Cost: $0.219/hour
-
-GCP Dataproc:
-- Cluster: 1 master + 2 workers
-- Instance: n1-standard-4 (4 vCPU, 15 GB RAM)
-- Storage: Google Cloud Storage
-- Cost: $0.170/hour
-
-### Software Requirements
+### AWS EMR Cluster
 ```bash
-# Core requirements
-Apache Spark 3.x
-Python 3.7+
-PySpark
+Cluster Configuration:
+- Release: emr-6.10.0
+- Applications: Spark 3.3.0
+- Master: 1 x m5.xlarge (4 vCPU, 16 GB RAM)
+- Core: 2 x m5.xlarge (4 vCPU, 16 GB RAM)
+- Storage: Amazon S3
+- Total Resources: 12 vCPU, 48 GB RAM
+- Cost: $0.219/hour
+```
 
-# Python libraries
-pip install matplotlib pandas numpy psutil --break-system-packages
+### GCP Dataproc Cluster
+```bash
+Cluster Configuration:
+- Image: 2.0-debian10
+- Spark: 3.1.3
+- Master: 1 x n1-standard-4 (4 vCPU, 15 GB RAM)
+- Workers: 2 x n1-standard-4 (4 vCPU, 15 GB RAM)
+- Storage: Google Cloud Storage
+- Total Resources: 12 vCPU, 45 GB RAM
+- Cost: $0.170/hour
+```
+
+### Spark Configuration
+
+Both platforms use identical Spark settings:
+```python
+spark.sql.adaptive.enabled = true
+spark.sql.shuffle.partitions = 200
+spark.default.parallelism = 200
+spark.memory.fraction = 0.8
+spark.memory.storageFraction = 0.3
+spark.executor.memory = 12G
+spark.driver.memory = 4G
 ```
 
 ---
@@ -315,56 +449,65 @@ pip install matplotlib pandas numpy psutil --break-system-packages
 
 ### Task 1.1: Analytics Queries (DataFrame)
 
-File: METCS777-term-paper-code-sample-1.1-Team18.py
+File: `METCS777-term-paper-code-sample-1.1-Team18.py`
 
 Performs 4 analytical queries using DataFrame API:
-1. Hero Trends Over Time - Pick/ban rates by year and hero
-2. Hero Performance by Duration - Win rates by game phase
-3. Duration Trends - Average match duration by month
-4. Duration-WinRate Correlation - Win rates by duration bucket
+1. Hero Trends Over Time - Aggregates picks/bans by year and hero_id, calculates pick_rate and ban_rate
+2. Hero Performance by Duration - Joins picks_bans with metadata, categorizes by game phase, calculates win rates
+3. Duration Trends - Aggregates match duration by year/month with statistics (avg, min, max, stddev)
+4. Duration-WinRate Correlation - Groups matches by duration buckets, calculates radiant win percentages
 
-Output: Text files, JSON metrics, PNG visualizations
+Output: Text files with query results, JSON performance metrics, PNG visualizations
 
 ### Task 1.2: Analytics Queries (RDD)
 
-File: METCS777-term-paper-code-sample-1.2-Team18.py
+File: `METCS777-term-paper-code-sample-1.2-Team18.py`
 
-Same queries as 1.1 but using RDD API for performance comparison.
+Implements identical queries using RDD API for performance comparison. Uses map, reduceByKey, and join operations with manual optimization.
+
+Output: Same structure as Task 1.1 with RDD performance metrics
 
 ### Task 2.1: Match Outcome Prediction
 
-File: METCS777-term-paper-code-sample-2.1-Team18.py
+File: `METCS777-term-paper-code-sample-2.1-Team18.py`
 
-Classification pipeline comparing DataFrame and RDD:
-- Features: 25 early-game metrics (first 10 minutes)
-- Algorithms: Logistic Regression, Random Forest, Gradient Boosting
-- Evaluation: AUC, Accuracy, Training Time, Inference Speed
+Classification pipeline with 25 early-game features:
+- Early objectives: first_blood_count, early_tower_kills, early_courier_kills
+- Gold/XP advantages: avg_gold_adv_5_10, max_gold_adv_5_10, gold_volatility
+- Team composition: radiant_pick_count, dire_pick_count
+- Player stats: avg_gpm_all, avg_xpm_all, total_kills, kill_death_ratio
 
-Output: JSON results, detailed report with feature importance
+Algorithms: Logistic Regression, Random Forest, Gradient Boosting
+Evaluation: AUC, Accuracy, Training Time, Inference Speed
+Comparison: DataFrame vs RDD implementations
 
 ### Task 2.2: Match Duration Prediction
 
-File: METCS777-term-paper-code-sample-2.2-Team18.py
+File: `METCS777-term-paper-code-sample-2.2-Team18.py`
 
-Regression pipeline comparing DataFrame and RDD:
-- Features: 26 match characteristics
-- Algorithms: Linear Regression, Random Forest, Gradient Boosting
-- Evaluation: RMSE, R², Training Time
+Regression pipeline with 26 match features:
+- Match info: leagueid, radiant_score, dire_score, score_difference
+- Objectives: total_objectives, total_towers, total_barracks
+- Teamfights: total_teamfights, avg_deaths_per_teamfight
+- Economy: max_gold_lead, min_gold_lead, gold_swing_std
+- Player performance: avg_gpm, avg_xpm, avg_hero_damage
 
-Output: JSON results, detailed report with feature importance
+Algorithms: Linear Regression, Random Forest Regressor, Gradient Boosting Regressor
+Evaluation: RMSE, R², Training Time
+Comparison: DataFrame vs RDD implementations
 
 ---
 
 ## Sample Insights
 
 Match Duration Trends:
-- 2021: Average 2,100 seconds (35 min)
-- 2024: Average 1,950 seconds (32.5 min)
+- 2021: Average 2,100 seconds (35 minutes)
+- 2024: Average 1,950 seconds (32.5 minutes)
 - Game became 7% faster over 4 years
 
 Win Rate Patterns:
-- 0-20 min: 58.46% Radiant (stomps)
-- 30-40 min: 49.60% Radiant (balanced)
+- 0-20 min: 58.46% Radiant (one-sided matches)
+- 30-40 min: 49.60% Radiant (balanced gameplay)
 - 50+ min: 50.59% Radiant (close games)
 
 ---
@@ -380,51 +523,83 @@ Win Rate Patterns:
 
 ---
 
+## Troubleshooting
+
+### Out of Memory Errors
+
+Increase executor memory:
+```bash
+--executor-memory 16G --driver-memory 8G
+```
+
+### RDD Linear Regression NaN Error
+
+This is a known issue with RDD implementation. Use DataFrame API instead.
+
+### Slow Performance
+
+Verify correct number of executors and enable adaptive query execution:
+```bash
+--conf spark.sql.adaptive.enabled=true
+```
+
+### S3/GCS Access Denied
+
+Ensure IAM roles have proper permissions:
+- AWS: `AmazonS3FullAccess` and `AmazonEMRFullAccessPolicy_v2`
+- GCP: `Storage Admin` and `Dataproc Worker`
+
+---
+
+## Cleanup
+
+### AWS EMR
+```bash
+# Terminate cluster
+aws emr terminate-clusters --cluster-ids j-XXXXXXXXXXXXX
+
+# Delete S3 buckets
+aws s3 rb s3://cs777-termpaper-input --force
+aws s3 rb s3://cs777-termpaper-output --force
+aws s3 rb s3://cs777-termpaper-code --force
+```
+
+### GCP Dataproc
+```bash
+# Delete cluster
+gcloud dataproc clusters delete dota2-analytics-cluster --region=us-east1
+
+# Delete Cloud Storage buckets
+gsutil -m rm -r gs://cs777-termpaper-input
+gsutil -m rm -r gs://cs777-termpaper-output
+gsutil -m rm -r gs://cs777-termpaper-code
+```
+
+---
+
 ## Documentation
 
-Complete documentation available in docs/METCS777-term-paper-code-sample-doc-Team18.pdf:
-- Detailed environment setup instructions
-- Step-by-step code execution guide
+Complete documentation in `docs/METCS777-term-paper-code-sample-doc-Team18.pdf`:
+- Detailed environment setup
+- Step-by-step execution guide
 - Comprehensive results analysis
-- Dataset description and feature explanations
+- Dataset and feature explanations
 
 ---
 
 ## Team Contributions
 
 Anh Pham (U01836723):
-- AWS EMR setup and configuration
+- AWS EMR infrastructure setup
 - DataFrame API implementation
 - Model 1 development
 - Cost analysis
 
 Jinzhe Bai (U41047897):
-- GCP Dataproc setup and configuration
+- GCP Dataproc infrastructure setup
 - RDD API implementation
 - Model 2 development
 - Visualization creation
-
----
-
-## Recommendations
-
-Use GCP Dataproc when:
-- Cost optimization is priority
-- Fast iteration needed
-- Performance critical
-
-Use AWS EMR when:
-- Deep AWS ecosystem integration needed
-- Enterprise support required
-
-Use DataFrame API when:
-- Complex queries (default choice)
-- Production ML models
-- Code maintainability important
-
-Use RDD API when:
-- High-throughput ETL pipelines
-- Fine-grained control needed
 
 ---
 
@@ -441,19 +616,10 @@ Use RDD API when:
 
 Academic project for MET CS777 - Big Data Analytics at Boston University.
 
----
-
-## Contact
-
-- Anh Pham: U01836723@bu.edu
-- Jinzhe Bai: U41047897@bu.edu
 
 ---
 
 Course: MET CS777 - Big Data Analytics
-Semester: Fall 2024
 Institution: Boston University Metropolitan College
-
----
 
 Last Updated: October 31, 2024
