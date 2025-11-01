@@ -610,16 +610,5 @@ Jinzhe Bai (U41047897):
 - AWS EMR: https://docs.aws.amazon.com/emr/
 - GCP Dataproc: https://cloud.google.com/dataproc/docs
 
----
-
-## License
-
-Academic project for MET CS777 - Big Data Analytics at Boston University.
-
-
----
-
-Course: MET CS777 - Big Data Analytics
-Institution: Boston University Metropolitan College
 
 Last Updated: October 31, 2024
